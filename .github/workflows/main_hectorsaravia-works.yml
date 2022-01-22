@@ -1,7 +1,7 @@
-# This workflow will build and push a Python application to an Azure Web App when a commit is pushed to your default branch.
+# This workflow will build and push a Docker container to an Azure Web App when a commit is pushed to your default branch.
 #
 # This workflow assumes you have already created the target Azure App Service web app.
-# For instructions see https://docs.microsoft.com/en-us/azure/app-service/quickstart-python?tabs=bash&pivots=python-framework-flask
+# For instructions see https://docs.microsoft.com/en-us/azure/app-service/quickstart-custom-container?tabs=dotnet&pivots=container-linux
 #
 # To configure this workflow:
 #
@@ -11,17 +11,23 @@
 # 2. Create a secret in your repository named AZURE_WEBAPP_PUBLISH_PROFILE, paste the publish profile contents as the value of the secret.
 #    For instructions on obtaining the publish profile see: https://docs.microsoft.com/azure/app-service/deploy-github-actions#configure-the-github-secret
 #
-# 3. Change the value for the AZURE_WEBAPP_NAME. Optionally, change the PYTHON_VERSION environment variables below.
+# 3. Create a GitHub Personal access token with "repo" and "read:packages" permissions. 
+#
+# 4. Create three app settings on your Azure Web app:
+#       DOCKER_REGISTRY_SERVER_URL: Set this to "https://ghcr.io"
+#       DOCKER_REGISTRY_SERVER_USERNAME: Set this to the GitHub username or organization that owns the repository
+#       DOCKER_REGISTRY_SERVER_PASSWORD: Set this to the value of your PAT token from the previous step
+#
+# 5. Change the value for the AZURE_WEBAPP_NAME.
 #
 # For more information on GitHub Actions for Azure: https://github.com/Azure/Actions
 # For more information on the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # For more samples to get started with GitHub Action workflows to deploy to Azure: https://github.com/Azure/actions-workflow-samples
 
-name: Build and deploy Python app to Azure Web App
+name: Build and deploy a container to an Azure Web App
 
 env:
   AZURE_WEBAPP_NAME: hectorsaravia-works  # set this to the name of your Azure Web App
-  PYTHON_VERSION: '3.9.10'              # set this to the Python version to use
 
 on:
   push:
@@ -36,27 +42,25 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python version
-        uses: actions/setup-python@v2.2.2
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v2
+      - name: Log in to GitHub container registry
+        uses: docker/login-action@v1.10.0
         with:
-          name: python-app
-          path: |
-            . 
-            !venv/
+          registry: ghcr.io
+          username: hectorsaravia
+          password: ${{ secrets.USER_PASSWORD }}
+
+      - name: Lowercase the repo name and username
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      - name: Build and push container image to registry
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
+          file: ./Dockerfile
 
   deploy:
     runs-on: ubuntu-latest
@@ -66,15 +70,13 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v2
-        with:
-          name: python-app
-          path: .
-          
-      - name: 'Deploy to Azure Web App'
+      - name: Lowercase the repo name and username
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: 'ghcr.io/${{ env.REPO }}:${{ github.sha }}'
