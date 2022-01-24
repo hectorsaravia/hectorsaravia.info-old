@@ -62,7 +62,7 @@ jobs:
           file: ./Dockerfile
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     environment:
       name: 'Development'
