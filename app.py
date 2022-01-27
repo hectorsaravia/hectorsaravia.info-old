@@ -9,6 +9,9 @@ s3 = boto3.client('s3',
     region_name='sa-east-1'
 )
 
+#downloads the file
+s3.Bucket('BUCKET_NAME').download_file('OBJECT_NAME', 'FILE_NAME')
+
 #Defines te use of a flask app
 app = Flask(__name__)
 
@@ -16,7 +19,6 @@ app = Flask(__name__)
 @app.route("/")
 def hello():
     if (AWS_SECRET_ACCESS_KEY != None and AWS_ACCESS_KEY != None):
-        s3.Bucket('BUCKET_NAME').download_file('OBJECT_NAME', 'FILE_NAME')
         return ("Everything seems to be working for now...")
     else:
         return ("Something went wrong with your AWS credentials")
