@@ -10,7 +10,7 @@ s3 = boto3.client('s3',
 )
 
 #downloads the file
-s3.Bucket('BUCKET_NAME').download_file('OBJECT_NAME', 'FILE_NAME')
+s3.download_file(BUCKET_NAME,OBJECT_NAME,FILE_NAME)
 
 #Defines te use of a flask app
 app = Flask(__name__)
