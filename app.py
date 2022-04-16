@@ -17,11 +17,10 @@ app = Flask(__name__)
 #Index flask route
 @app.route("/")
 def hello():
-    if (AWS_SECRET_ACCESS_KEY != None and AWS_ACCESS_KEY != None):
+    if ( not os.path.exists('/CV.pdf') ):
         s3.download_file(BUCKET_NAME,OBJECT_NAME,'/CV.pdf')
-        return send_from_directory('/', 'CV.pdf')
-    else:
-        return ("Something went wrong with your AWS credentials")
+    return send_from_directory('/', 'CV.pdf')
+
 
 #run settings
 app.run(host = '0.0.0.0', port = 80)
