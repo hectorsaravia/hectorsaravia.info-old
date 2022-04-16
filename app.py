@@ -1,6 +1,6 @@
-from flask import Flask
+from flask import Flask, make_response, send_from_directory
 from aws_credetianls import AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY, BUCKET_NAME, OBJECT_NAME, FILE_NAME
-import boto3
+import boto3, os
 
 #Declaration of AWS credentials to use the s3 resource
 s3 = boto3.client('s3',
@@ -10,7 +10,6 @@ s3 = boto3.client('s3',
 )
 
 #downloads the file
-s3.download_file(BUCKET_NAME,OBJECT_NAME,FILE_NAME)
 
 #Defines te use of a flask app
 app = Flask(__name__)
@@ -19,7 +18,8 @@ app = Flask(__name__)
 @app.route("/")
 def hello():
     if (AWS_SECRET_ACCESS_KEY != None and AWS_ACCESS_KEY != None):
-        return ("Everything seems to be working for now...")
+        s3.download_file(BUCKET_NAME,OBJECT_NAME,'/CV.pdf')
+        return send_from_directory('/', 'CV.pdf')
     else:
         return ("Something went wrong with your AWS credentials")
 
