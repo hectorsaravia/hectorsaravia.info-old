@@ -18,8 +18,8 @@ app = Flask(__name__)
 @app.route("/")
 def hello():
     if ( not os.path.exists('/CV.pdf') ):
-        s3.download_file(BUCKET_NAME,OBJECT_NAME,'/CV.pdf')
-    return send_from_directory('/', 'CV.pdf')
+        s3.download_file(BUCKET_NAME,OBJECT_NAME,'/CV2.pdf')
+    return send_from_directory('/', 'CV2.pdf')
 
 
 #run settings
